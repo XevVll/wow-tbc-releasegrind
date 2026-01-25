@@ -156,7 +156,7 @@
             margin: 5px 0;
             border-radius: 4px;
             min-height: 35px;
-            cursor: pointer;
+            cursor: move;
             transition: all 0.3s;
             border: 1px solid transparent;
         }
@@ -168,6 +168,29 @@
         
         .group-slot.filled {
             background: rgba(255,184,0,0.15);
+            cursor: grab;
+        }
+        
+        .group-slot.filled:active {
+            cursor: grabbing;
+        }
+        
+        .group-slot.drag-over {
+            border: 2px dashed #ffb800;
+            background: rgba(255,184,0,0.2);
+        }
+        
+        .player-row {
+            cursor: grab;
+            user-select: none;
+        }
+        
+        .player-row:active {
+            cursor: grabbing;
+        }
+        
+        .player-row.dragging {
+            opacity: 0.5;
         }
         
         select option {
@@ -230,7 +253,7 @@
                     <option value="">Typ wählen</option>
                     <option value="Melee Cleave">Melee Cleave</option>
                     <option value="Spell Cleave">Spell Cleave</option>
-                    <option value="Single Target">Single Target</option>
+                    <option value="Beides">Beides</option>
                 </select>
                 <button onclick="addPlayer()">Spieler hinzufügen</button>
             </div>
@@ -337,7 +360,7 @@
             }
             
             tbody.innerHTML = players.map((player, index) => `
-                <tr>
+                <tr class="player-row" draggable="true" data-player-index="${index}">
                     <td>${player.name}</td>
                     <td class="class-${player.class.toLowerCase()}">${player.class}</td>
                     <td class="role-${player.role.toLowerCase()}">${player.role}</td>
@@ -345,6 +368,12 @@
                     <td><button class="delete-btn" onclick="deletePlayer(${index})">Löschen</button></td>
                 </tr>
             `).join('');
+            
+            // Add drag event listeners to player rows
+            document.querySelectorAll('.player-row').forEach(row => {
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragend', handleDragEnd);
+            });
         }
         
         function updateStats() {
@@ -366,43 +395,117 @@
                     ${[0, 1, 2, 3, 4].map(slot => {
                         const player = groups[i][slot];
                         return `
-                            <div class="group-slot ${player ? 'filled' : ''}" onclick="assignToGroup(${i}, ${slot})">
-                                ${player ? `<span class="class-${player.class.toLowerCase()}">${player.name}</span> - ${player.role}` : 'Leer (klicken zum zuweisen)'}
+                            <div class="group-slot ${player ? 'filled' : ''}" 
+                                 data-group="${i}" 
+                                 data-slot="${slot}"
+                                 draggable="${player ? 'true' : 'false'}">
+                                ${player ? `<span class="class-${player.class.toLowerCase()}">${player.name}</span> - ${player.role}` : 'Leer (Spieler hierher ziehen)'}
                             </div>
                         `;
                     }).join('')}
                 `;
                 builder.appendChild(groupDiv);
             }
+            
+            // Add drag event listeners to group slots
+            document.querySelectorAll('.group-slot').forEach(slot => {
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleDrop);
+                slot.addEventListener('dragleave', handleDragLeave);
+                
+                if (slot.classList.contains('filled')) {
+                    slot.addEventListener('dragstart', handleGroupSlotDragStart);
+                    slot.addEventListener('dragend', handleDragEnd);
+                }
+            });
         }
         
-        function assignToGroup(groupIndex, slotIndex) {
-            const playerName = prompt('Spielername eingeben (oder leer lassen zum Entfernen):');
-            
-            if (playerName === null) return;
-            
-            if (playerName === '') {
-                groups[groupIndex][slotIndex] = null;
-                updateGroupBuilder();
-                return;
+        let draggedPlayer = null;
+        let dragSource = null; // 'table' or 'group'
+        let draggedFromGroup = null;
+        let draggedFromSlot = null;
+        
+        function handleDragStart(e) {
+            const row = e.target.closest('.player-row');
+            if (row) {
+                const playerIndex = parseInt(row.dataset.playerIndex);
+                draggedPlayer = players[playerIndex];
+                dragSource = 'table';
+                row.classList.add('dragging');
             }
-            
-            const player = players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
-            
-            if (!player) {
-                alert('Spieler nicht gefunden!');
-                return;
-            }
-            
-            // Remove from other groups
-            groups.forEach(group => {
-                const idx = group.findIndex(p => p && p.name === player.name);
-                if (idx !== -1) group[idx] = null;
-            });
-            
-            groups[groupIndex][slotIndex] = player;
-            updateGroupBuilder();
         }
+        
+        function handleGroupSlotDragStart(e) {
+            const slot = e.target.closest('.group-slot');
+            if (slot && slot.classList.contains('filled')) {
+                const groupIndex = parseInt(slot.dataset.group);
+                const slotIndex = parseInt(slot.dataset.slot);
+                draggedPlayer = groups[groupIndex][slotIndex];
+                dragSource = 'group';
+                draggedFromGroup = groupIndex;
+                draggedFromSlot = slotIndex;
+                slot.style.opacity = '0.5';
+            }
+        }
+        
+        function handleDragEnd(e) {
+            const row = e.target.closest('.player-row');
+            if (row) {
+                row.classList.remove('dragging');
+            }
+            const slot = e.target.closest('.group-slot');
+            if (slot) {
+                slot.style.opacity = '1';
+            }
+            draggedPlayer = null;
+            dragSource = null;
+            draggedFromGroup = null;
+            draggedFromSlot = null;
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            const slot = e.target.closest('.group-slot');
+            if (slot) {
+                slot.classList.add('drag-over');
+            }
+        }
+        
+        function handleDragLeave(e) {
+            const slot = e.target.closest('.group-slot');
+            if (slot) {
+                slot.classList.remove('drag-over');
+            }
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            const slot = e.target.closest('.group-slot');
+            
+            if (slot && draggedPlayer) {
+                slot.classList.remove('drag-over');
+                const groupIndex = parseInt(slot.dataset.group);
+                const slotIndex = parseInt(slot.dataset.slot);
+                
+                // Remove from previous position if dragged from group
+                if (dragSource === 'group') {
+                    groups[draggedFromGroup][draggedFromSlot] = null;
+                }
+                
+                // Remove player from any other group
+                groups.forEach(group => {
+                    const idx = group.findIndex(p => p && p.name === draggedPlayer.name);
+                    if (idx !== -1) group[idx] = null;
+                });
+                
+                // Assign to new position
+                groups[groupIndex][slotIndex] = draggedPlayer;
+                
+                updateGroupBuilder();
+            }
+        }
+        
+
         
         // Initialize
         updateDisplay();
