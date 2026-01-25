@@ -361,6 +361,7 @@
         
         let players = [];
         let groups = [[], [], [], [], []];
+        let groupsLoaded = false;
         
         // Real-time listener for players
         onSnapshot(collection(db, "players"), (snapshot) => {
@@ -376,16 +377,24 @@
         onSnapshot(doc(db, "config", "groups"), (docSnap) => {
             if (docSnap.exists()) {
                 groups = docSnap.data().groups || [[], [], [], [], []];
+                console.log("Groups loaded from Firebase:", groups);
             } else {
-                // Initialize empty groups if document doesn't exist
+                console.log("No groups document found, initializing...");
+                // Only initialize if we haven't loaded groups yet
+                if (!groupsLoaded) {
+                    groups = [[], [], [], [], []];
+                    saveGroups();
+                }
+            }
+            groupsLoaded = true;
+            updateGroupBuilder();
+        }, (error) => {
+            console.log("Error loading groups, creating new document...", error);
+            if (!groupsLoaded) {
                 groups = [[], [], [], [], []];
                 saveGroups();
             }
-            updateGroupBuilder();
-        }, (error) => {
-            console.log("Groups document doesn't exist yet, creating...");
-            groups = [[], [], [], [], []];
-            saveGroups();
+            groupsLoaded = true;
             updateGroupBuilder();
         });
         
@@ -538,19 +547,25 @@
         function updateGroupBuilder() {
             const builder = document.getElementById('groupBuilder');
             
+            // Don't calculate groups until they're loaded
+            if (!groupsLoaded) {
+                builder.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5);">Lade Gruppen...</p>';
+                return;
+            }
+            
             // Calculate how many groups we need (minimum 5, more if we have more players)
-            const neededGroups = Math.max(5, Math.ceil(players.length / 5));
+            const neededGroups = Math.max(5, groups.length);
             
             // Ensure groups array has enough slots
             while (groups.length < neededGroups) {
-                groups.push([]);
+                groups.push([null, null, null, null, null]);
             }
             
             builder.innerHTML = '';
             
             for (let i = 0; i < neededGroups; i++) {
                 // Ensure each group has 5 slots
-                while (!groups[i]) groups[i] = [];
+                if (!groups[i]) groups[i] = [null, null, null, null, null];
                 while (groups[i].length < 5) groups[i].push(null);
                 
                 const groupDiv = document.createElement('div');
