@@ -249,7 +249,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.4 - 2025-01-26
+            Version 1.5 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -284,13 +284,17 @@
                 </select>
                 <select id="playerSchedule">
                     <option value="">Zeitplan wählen</option>
-                    <option value="0 Uhr gehts los">0 Uhr gehts los</option>
+                    <option value="0 Uhr bis Exidus">0 Uhr bis Exidus</option>
                     <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
                     <option value="Mir egal">Mir egal</option>
                 </select>
                 <label style="display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">
                     <input type="checkbox" id="playerVacation" style="width: auto; margin-right: 8px;">
                     <span>Urlaub 06.02</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                    <input type="checkbox" id="playerQuests" style="width: auto; margin-right: 8px;">
+                    <span>25 Quests vorbereitet</span>
                 </label>
             </div>
             <div style="margin-top: 10px;">
@@ -334,13 +338,14 @@
                         <th>Typ</th>
                         <th>Zeitplan</th>
                         <th>Urlaub 06.02</th>
+                        <th>25 Quests</th>
                         <th>Gruppe</th>
                         <th>Aktion</th>
                     </tr>
                 </thead>
                 <tbody id="playerTableBody">
                     <tr>
-                        <td colspan="8" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td>
+                        <td colspan="9" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td>
                     </tr>
                 </tbody>
             </table>
@@ -466,9 +471,10 @@
             const type = document.getElementById('playerType').value;
             const schedule = document.getElementById('playerSchedule').value;
             const vacation = document.getElementById('playerVacation').checked;
+            const quests = document.getElementById('playerQuests').checked;
             
             if (!name || !playerClass || !role || !type || !schedule) {
-                alert('Bitte fülle alle Felder aus (außer Urlaub-Checkbox)!');
+                alert('Bitte fülle alle Felder aus (außer Checkboxen)!');
                 return;
             }
             
@@ -482,6 +488,7 @@
                     type,
                     schedule,
                     vacation,
+                    quests,
                     createdAt: new Date()
                 });
                 
@@ -492,6 +499,7 @@
                 document.getElementById('playerType').value = '';
                 document.getElementById('playerSchedule').value = '';
                 document.getElementById('playerVacation').checked = false;
+                document.getElementById('playerQuests').checked = false;
             } catch (error) {
                 console.error("Error adding player:", error);
                 alert('Fehler beim Hinzufügen: ' + error.message);
@@ -537,7 +545,8 @@
                                 role: player.role,
                                 type: player.type,
                                 schedule: player.schedule || '',
-                                vacation: player.vacation || false
+                                vacation: player.vacation || false,
+                                quests: player.quests || false
                             };
                         } else {
                             groupsData[`group_${groupIndex}`][`slot_${slotIndex}`] = null;
@@ -569,7 +578,7 @@
             console.log("updateTable called, filterUnassigned:", filterUnassigned);
             
             if (players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td></tr>';
                 return;
             }
             
@@ -597,7 +606,7 @@
             }
             
             if (displayPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: rgba(255,255,255,0.5);">Alle Spieler sind zugewiesen</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: rgba(255,255,255,0.5);">Alle Spieler sind zugewiesen</td></tr>';
                 return;
             }
             
@@ -605,6 +614,7 @@
                 const isAssigned = assignedPlayerIds.has(player.id);
                 const groupNumber = playerGroups[player.id] || '-';
                 const vacationIcon = player.vacation ? '🏖️' : '-';
+                const questsIcon = player.quests ? '✅' : '❌';
                 return `
                 <tr class="player-row ${isAssigned ? 'assigned' : ''}" draggable="true" data-player-id="${player.id}">
                     <td>${player.name}</td>
@@ -613,6 +623,7 @@
                     <td>${player.type}</td>
                     <td>${player.schedule || '-'}</td>
                     <td style="text-align: center;">${vacationIcon}</td>
+                    <td style="text-align: center;">${questsIcon}</td>
                     <td style="text-align: center;">${groupNumber}</td>
                     <td><button class="delete-btn" onclick="deletePlayer('${player.id}')">Löschen</button></td>
                 </tr>
