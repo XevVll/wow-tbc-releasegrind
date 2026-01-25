@@ -54,6 +54,41 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
         
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border: 2px solid #ffb800;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(255,184,0,0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #ffb800;
+        }
+        
         h2 {
             color: #ffb800;
             margin-bottom: 15px;
@@ -118,6 +153,18 @@
         
         .player-table tr:hover {
             background: rgba(255,255,255,0.05);
+        }
+        
+        .edit-btn {
+            background: #3498db;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        
+        .edit-btn:hover {
+            background: #2980b9;
         }
         
         .delete-btn {
@@ -249,7 +296,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.6 - 2025-01-26
+            Version 1.7 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -365,10 +412,63 @@
         </div>
     </div>
 
+    <!-- Edit Player Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2 style="color: #ffb800; margin-bottom: 20px;">Spieler bearbeiten</h2>
+            
+            <div class="input-grid">
+                <input type="text" id="editPlayerName" placeholder="Spielername">
+                <select id="editPlayerClass">
+                    <option value="">Klasse wählen</option>
+                    <option value="Warrior">Warrior</option>
+                    <option value="Paladin">Paladin</option>
+                    <option value="Hunter">Hunter</option>
+                    <option value="Rogue">Rogue</option>
+                    <option value="Priest">Priest</option>
+                    <option value="Shaman">Shaman</option>
+                    <option value="Mage">Mage</option>
+                    <option value="Warlock">Warlock</option>
+                    <option value="Druid">Druid</option>
+                </select>
+                <select id="editPlayerRole" multiple style="height: 80px;">
+                    <option value="Tank">Tank</option>
+                    <option value="Heal">Heal</option>
+                    <option value="DPS">DPS</option>
+                </select>
+                <select id="editPlayerType">
+                    <option value="">Typ wählen</option>
+                    <option value="Melee Cleave">Melee Cleave</option>
+                    <option value="Spell Cleave">Spell Cleave</option>
+                    <option value="Beides">Beides</option>
+                </select>
+                <select id="editPlayerSchedule">
+                    <option value="">Zeitplan wählen</option>
+                    <option value="0 Uhr gehts los">0 Uhr gehts los</option>
+                    <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
+                    <option value="Mir egal">Mir egal</option>
+                </select>
+                <label style="display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                    <input type="checkbox" id="editPlayerVacation" style="width: auto; margin-right: 8px;">
+                    <span>Urlaub 06.02</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                    <input type="checkbox" id="editPlayerQuests" style="width: auto; margin-right: 8px;">
+                    <span>25 Quests vorbereitet</span>
+                </label>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="saveEditPlayer()" style="margin-right: 10px;">💾 Speichern</button>
+                <button onclick="closeEditModal()" style="background: #95a5a6;">❌ Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyCH0GJmCAf_e9BZckybnfUA-imO1OXH-5c",
@@ -386,6 +486,7 @@
         let players = [];
         let groups = [[], [], [], [], []];
         let groupsLoaded = false;
+        let editingPlayerId = null;
         
         // Real-time listener for players
         onSnapshot(collection(db, "players"), (snapshot) => {
@@ -637,7 +738,10 @@
                     <td style="text-align: center;">${vacationIcon}</td>
                     <td style="text-align: center;">${questsIcon}</td>
                     <td style="text-align: center;">${groupNumber}</td>
-                    <td><button class="delete-btn" onclick="deletePlayer('${player.id}')">Löschen</button></td>
+                    <td>
+                        <button class="edit-btn" onclick="editPlayer('${player.id}')">✏️ Bearbeiten</button>
+                        <button class="delete-btn" onclick="deletePlayer('${player.id}')">🗑️ Löschen</button>
+                    </td>
                 </tr>
             `}).join('');
             
@@ -819,6 +923,113 @@
         
         // Initialize
         updateSyncStatus('✅ Synchronisiert mit Firebase');
+        
+        // Edit Player Functions
+        window.editPlayer = function(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            
+            editingPlayerId = playerId;
+            
+            // Fill form with current values
+            document.getElementById('editPlayerName').value = player.name;
+            document.getElementById('editPlayerClass').value = player.class;
+            document.getElementById('editPlayerType').value = player.type;
+            document.getElementById('editPlayerSchedule').value = player.schedule || '';
+            document.getElementById('editPlayerVacation').checked = player.vacation || false;
+            document.getElementById('editPlayerQuests').checked = player.quests || false;
+            
+            // Set multiple role selections
+            const roleSelect = document.getElementById('editPlayerRole');
+            const roles = player.roles || (player.role ? player.role.split(', ') : []);
+            Array.from(roleSelect.options).forEach(option => {
+                option.selected = roles.includes(option.value);
+            });
+            
+            // Show modal
+            document.getElementById('editModal').style.display = 'block';
+        };
+        
+        window.closeEditModal = function() {
+            document.getElementById('editModal').style.display = 'none';
+            editingPlayerId = null;
+        };
+        
+        window.saveEditPlayer = async function() {
+            if (!editingPlayerId) return;
+            
+            const name = document.getElementById('editPlayerName').value.trim();
+            const playerClass = document.getElementById('editPlayerClass').value;
+            const roleSelect = document.getElementById('editPlayerRole');
+            const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
+            const type = document.getElementById('editPlayerType').value;
+            const schedule = document.getElementById('editPlayerSchedule').value;
+            const vacation = document.getElementById('editPlayerVacation').checked;
+            const quests = document.getElementById('editPlayerQuests').checked;
+            
+            if (!name || !playerClass || selectedRoles.length === 0 || !type || !schedule) {
+                alert('Bitte fülle alle Felder aus! (Mindestens eine Rolle auswählen)');
+                return;
+            }
+            
+            const role = selectedRoles.join(', ');
+            
+            updateSyncStatus('⏳ Aktualisiere Spieler...', true);
+            
+            try {
+                await updateDoc(doc(db, "players", editingPlayerId), {
+                    name,
+                    class: playerClass,
+                    role,
+                    roles: selectedRoles,
+                    type,
+                    schedule,
+                    vacation,
+                    quests,
+                    updatedAt: new Date()
+                });
+                
+                // Update player in groups if assigned
+                let groupsUpdated = false;
+                groups.forEach((group, groupIndex) => {
+                    group.forEach((player, slotIndex) => {
+                        if (player && player.id === editingPlayerId) {
+                            groups[groupIndex][slotIndex] = {
+                                id: editingPlayerId,
+                                name,
+                                class: playerClass,
+                                role,
+                                roles: selectedRoles,
+                                type,
+                                schedule,
+                                vacation,
+                                quests
+                            };
+                            groupsUpdated = true;
+                        }
+                    });
+                });
+                
+                if (groupsUpdated) {
+                    await saveGroups();
+                }
+                
+                closeEditModal();
+                updateSyncStatus('✅ Spieler aktualisiert');
+            } catch (error) {
+                console.error("Error updating player:", error);
+                alert('Fehler beim Aktualisieren: ' + error.message);
+                updateSyncStatus('❌ Fehler beim Aktualisieren');
+            }
+        };
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        };
         
         // Auto-fill groups function
         window.autoFillGroups = async function() {
