@@ -155,6 +155,44 @@
             background: rgba(255,255,255,0.05);
         }
         
+        .class-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+        }
+        
+        .role-checkboxes {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+        }
+        
+        .class-checkbox-label, .role-checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .class-checkbox-label:hover, .role-checkbox-label:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .class-checkbox-label input, .role-checkbox-label input {
+            width: auto;
+            margin-right: 6px;
+        }
+        
         .edit-btn {
             background: #3498db;
             color: white;
@@ -296,7 +334,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.7 - 2025-01-26
+            Version 1.9 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -432,11 +470,17 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-                <select id="editPlayerRole" multiple style="height: 80px;">
-                    <option value="Tank">Tank</option>
-                    <option value="Heal">Heal</option>
-                    <option value="DPS">DPS</option>
-                </select>
+                <div class="role-checkboxes">
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="editPlayerRoleCheckbox" value="Tank"> Tank
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="editPlayerRoleCheckbox" value="Heal"> Heal
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="editPlayerRoleCheckbox" value="DPS"> DPS
+                    </label>
+                </div>
                 <select id="editPlayerType">
                     <option value="">Typ wählen</option>
                     <option value="Melee Cleave">Melee Cleave</option>
@@ -446,6 +490,7 @@
                 <select id="editPlayerSchedule">
                     <option value="">Zeitplan wählen</option>
                     <option value="0 Uhr gehts los">0 Uhr gehts los</option>
+                    <option value="Mittags">Mittags</option>
                     <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
                     <option value="Mir egal">Mir egal</option>
                 </select>
@@ -570,8 +615,8 @@
         window.addPlayer = async function() {
             const name = document.getElementById('playerName').value.trim();
             const playerClass = document.getElementById('playerClass').value;
-            const roleSelect = document.getElementById('playerRole');
-            const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
+            const roleCheckboxes = document.querySelectorAll('.playerRoleCheckbox:checked');
+            const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
             const type = document.getElementById('playerType').value;
             const schedule = document.getElementById('playerSchedule').value;
             const vacation = document.getElementById('playerVacation').checked;
@@ -603,7 +648,7 @@
                 // Clear inputs
                 document.getElementById('playerName').value = '';
                 document.getElementById('playerClass').value = '';
-                roleSelect.selectedIndex = -1; // Clear all selections
+                document.querySelectorAll('.playerRoleCheckbox').forEach(cb => cb.checked = false);
                 document.getElementById('playerType').value = '';
                 document.getElementById('playerSchedule').value = '';
                 document.getElementById('playerVacation').checked = false;
@@ -939,11 +984,10 @@
             document.getElementById('editPlayerVacation').checked = player.vacation || false;
             document.getElementById('editPlayerQuests').checked = player.quests || false;
             
-            // Set multiple role selections
-            const roleSelect = document.getElementById('editPlayerRole');
+            // Set role checkboxes
             const roles = player.roles || (player.role ? player.role.split(', ') : []);
-            Array.from(roleSelect.options).forEach(option => {
-                option.selected = roles.includes(option.value);
+            document.querySelectorAll('.editPlayerRoleCheckbox').forEach(cb => {
+                cb.checked = roles.includes(cb.value);
             });
             
             // Show modal
@@ -960,8 +1004,8 @@
             
             const name = document.getElementById('editPlayerName').value.trim();
             const playerClass = document.getElementById('editPlayerClass').value;
-            const roleSelect = document.getElementById('editPlayerRole');
-            const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
+            const roleCheckboxes = document.querySelectorAll('.editPlayerRoleCheckbox:checked');
+            const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
             const type = document.getElementById('editPlayerType').value;
             const schedule = document.getElementById('editPlayerSchedule').value;
             const vacation = document.getElementById('editPlayerVacation').checked;
