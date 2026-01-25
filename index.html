@@ -249,7 +249,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.2 - 2025-01-26
+            Version 1.3 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -421,6 +421,7 @@
             }
             groupsLoaded = true;
             updateGroupBuilder();
+            updateTable(); // Update table when groups change
         }, (error) => {
             console.log("Error loading groups, creating new document...", error);
             if (!groupsLoaded) {
@@ -435,6 +436,7 @@
             }
             groupsLoaded = true;
             updateGroupBuilder();
+            updateTable(); // Update table when groups change
         });
         
         function updateSyncStatus(message, loading = false) {
@@ -539,7 +541,10 @@
         
         function updateTable() {
             const tbody = document.getElementById('playerTableBody');
-            const filterUnassigned = document.getElementById('filterUnassigned')?.checked || false;
+            const filterCheckbox = document.getElementById('filterUnassigned');
+            const filterUnassigned = filterCheckbox ? filterCheckbox.checked : false;
+            
+            console.log("updateTable called, filterUnassigned:", filterUnassigned);
             
             if (players.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td></tr>';
@@ -548,28 +553,25 @@
             
             // Check which players are assigned to groups
             const assignedPlayerIds = new Set();
-            groups.forEach((group, groupIndex) => {
-                group.forEach(player => {
-                    if (player && player.id) {
-                        assignedPlayerIds.add(player.id);
-                    }
-                });
-            });
-            
-            // Find which group each player is in
             const playerGroups = {};
+            
             groups.forEach((group, groupIndex) => {
                 group.forEach((player, slot) => {
                     if (player && player.id) {
+                        assignedPlayerIds.add(player.id);
                         playerGroups[player.id] = groupIndex + 1;
                     }
                 });
             });
             
+            console.log("Assigned player IDs:", Array.from(assignedPlayerIds));
+            console.log("Player groups:", playerGroups);
+            
             // Filter players if needed
             let displayPlayers = players;
             if (filterUnassigned) {
                 displayPlayers = players.filter(p => !assignedPlayerIds.has(p.id));
+                console.log("Filtered to unassigned players:", displayPlayers.length);
             }
             
             if (displayPlayers.length === 0) {
