@@ -23,31 +23,7 @@
             max-width: 1400px;
             margin: 0 auto;
         }
-        .input-grid .role-checkbox-wrapper {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
         
-        .input-grid .role-checkbox-label {
-            flex: 1;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9em;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .input-grid .role-checkbox-label:hover {
-            background: rgba(255,255,255,0.15);
-            transform: translateY(-1px);
-        }
-
         h1 {
             text-align: center;
             color: #ffb800;
@@ -379,19 +355,17 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-
-               <div class="role-checkboxes">
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="playerRoleCheckbox" value="Tank"> Tank
-                    </label>
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="playerRoleCheckbox" value="Heal"> Heal
-                    </label>
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="playerRoleCheckbox" value="DPS"> DPS
-                    </label>
-                </div>
-
+                <select id="playerRole" multiple style="height: 80px;">
+                    <option value="Tank">Tank</option>
+                    <option value="Heal">Heal</option>
+                    <option value="DPS">DPS</option>
+                </select>
+                <select id="playerType">
+                    <option value="">Typ wählen</option>
+                    <option value="Melee Cleave">Melee Cleave</option>
+                    <option value="Spell Cleave">Spell Cleave</option>
+                    <option value="Beides">Beides</option>
+                </select>
                 <select id="playerSchedule">
                     <option value="">Zeitplan wählen</option>
                     <option value="0 Uhr gehts los">0 Uhr gehts los</option>
