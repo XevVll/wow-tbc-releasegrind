@@ -31,6 +31,21 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         
+        .sync-status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0,255,0,0.1);
+            border-radius: 5px;
+            color: #0f0;
+            font-weight: bold;
+        }
+        
+        .sync-status.loading {
+            background: rgba(255,255,0,0.1);
+            color: #ff0;
+        }
+        
         .section {
             background: rgba(255,255,255,0.05);
             border-radius: 10px;
@@ -227,6 +242,8 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         
+        <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
+        
         <div class="section">
             <h2>➕ Spieler hinzufügen</h2>
             <div class="input-grid">
@@ -306,11 +323,52 @@
         </div>
     </div>
 
-    <script>
-        let players = [];
-        let groups = [[], [], [], [], []]; // 5 Gruppen für einen 25er Raid
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH0GJmCAf_e9BZckybnfUA-imO1OXH-5c",
+            authDomain: "wow-tbc-releasegrind.firebaseapp.com",
+            projectId: "wow-tbc-releasegrind",
+            storageBucket: "wow-tbc-releasegrind.firebasestorage.app",
+            messagingSenderId: "105230496616",
+            appId: "1:105230496616:web:74ed806ebdbb3e82e8dcdd",
+            measurementId: "G-M7E1TNSJ72"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         
-        function addPlayer() {
+        let players = [];
+        let groups = [[], [], [], [], []];
+        
+        // Real-time listener for players
+        onSnapshot(collection(db, "players"), (snapshot) => {
+            players = [];
+            snapshot.forEach((doc) => {
+                players.push({ id: doc.id, ...doc.data() });
+            });
+            updateDisplay();
+            updateSyncStatus('✅ Synchronisiert mit Firebase');
+        });
+        
+        // Real-time listener for groups
+        onSnapshot(doc(db, "config", "groups"), (doc) => {
+            if (doc.exists()) {
+                groups = doc.data().groups || [[], [], [], [], []];
+                updateGroupBuilder();
+            }
+        });
+        
+        function updateSyncStatus(message, loading = false) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = message;
+            status.className = 'sync-status' + (loading ? ' loading' : '');
+        }
+        
+        window.addPlayer = async function() {
             const name = document.getElementById('playerName').value.trim();
             const playerClass = document.getElementById('playerClass').value;
             const role = document.getElementById('playerRole').value;
@@ -321,34 +379,65 @@
                 return;
             }
             
-            players.push({ name, class: playerClass, role, type });
+            updateSyncStatus('⏳ Speichere Spieler...', true);
             
-            // Clear inputs
-            document.getElementById('playerName').value = '';
-            document.getElementById('playerClass').value = '';
-            document.getElementById('playerRole').value = '';
-            document.getElementById('playerType').value = '';
-            
-            updateDisplay();
-        }
-        
-        function deletePlayer(index) {
-            if (confirm(`${players[index].name} wirklich löschen?`)) {
-                // Remove from groups if assigned
-                groups.forEach(group => {
-                    const idx = group.findIndex(p => p.name === players[index].name);
-                    if (idx !== -1) group.splice(idx, 1);
+            try {
+                await addDoc(collection(db, "players"), {
+                    name,
+                    class: playerClass,
+                    role,
+                    type,
+                    createdAt: new Date()
                 });
                 
-                players.splice(index, 1);
-                updateDisplay();
+                // Clear inputs
+                document.getElementById('playerName').value = '';
+                document.getElementById('playerClass').value = '';
+                document.getElementById('playerRole').value = '';
+                document.getElementById('playerType').value = '';
+            } catch (error) {
+                console.error("Error adding player:", error);
+                alert('Fehler beim Hinzufügen: ' + error.message);
+                updateSyncStatus('❌ Fehler beim Speichern');
+            }
+        };
+        
+        window.deletePlayer = async function(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (confirm(`${player.name} wirklich löschen?`)) {
+                updateSyncStatus('⏳ Lösche Spieler...', true);
+                
+                try {
+                    // Remove from groups
+                    groups.forEach(group => {
+                        const idx = group.findIndex(p => p && p.id === playerId);
+                        if (idx !== -1) group[idx] = null;
+                    });
+                    await saveGroups();
+                    
+                    await deleteDoc(doc(db, "players", playerId));
+                } catch (error) {
+                    console.error("Error deleting player:", error);
+                    alert('Fehler beim Löschen: ' + error.message);
+                    updateSyncStatus('❌ Fehler beim Löschen');
+                }
+            }
+        };
+        
+        async function saveGroups() {
+            try {
+                await setDoc(doc(db, "config", "groups"), {
+                    groups: groups,
+                    updatedAt: new Date()
+                });
+            } catch (error) {
+                console.error("Error saving groups:", error);
             }
         }
         
         function updateDisplay() {
             updateTable();
             updateStats();
-            updateGroupBuilder();
         }
         
         function updateTable() {
@@ -359,13 +448,13 @@
                 return;
             }
             
-            tbody.innerHTML = players.map((player, index) => `
-                <tr class="player-row" draggable="true" data-player-index="${index}">
+            tbody.innerHTML = players.map((player) => `
+                <tr class="player-row" draggable="true" data-player-id="${player.id}">
                     <td>${player.name}</td>
                     <td class="class-${player.class.toLowerCase()}">${player.class}</td>
                     <td class="role-${player.role.toLowerCase()}">${player.role}</td>
                     <td>${player.type}</td>
-                    <td><button class="delete-btn" onclick="deletePlayer(${index})">Löschen</button></td>
+                    <td><button class="delete-btn" onclick="deletePlayer('${player.id}')">Löschen</button></td>
                 </tr>
             `).join('');
             
@@ -421,15 +510,15 @@
         }
         
         let draggedPlayer = null;
-        let dragSource = null; // 'table' or 'group'
+        let dragSource = null;
         let draggedFromGroup = null;
         let draggedFromSlot = null;
         
         function handleDragStart(e) {
             const row = e.target.closest('.player-row');
             if (row) {
-                const playerIndex = parseInt(row.dataset.playerIndex);
-                draggedPlayer = players[playerIndex];
+                const playerId = row.dataset.playerId;
+                draggedPlayer = players.find(p => p.id === playerId);
                 dragSource = 'table';
                 row.classList.add('dragging');
             }
@@ -478,7 +567,7 @@
             }
         }
         
-        function handleDrop(e) {
+        async function handleDrop(e) {
             e.preventDefault();
             const slot = e.target.closest('.group-slot');
             
@@ -487,6 +576,8 @@
                 const groupIndex = parseInt(slot.dataset.group);
                 const slotIndex = parseInt(slot.dataset.slot);
                 
+                updateSyncStatus('⏳ Aktualisiere Gruppen...', true);
+                
                 // Remove from previous position if dragged from group
                 if (dragSource === 'group') {
                     groups[draggedFromGroup][draggedFromSlot] = null;
@@ -494,21 +585,20 @@
                 
                 // Remove player from any other group
                 groups.forEach(group => {
-                    const idx = group.findIndex(p => p && p.name === draggedPlayer.name);
+                    const idx = group.findIndex(p => p && p.id === draggedPlayer.id);
                     if (idx !== -1) group[idx] = null;
                 });
                 
                 // Assign to new position
                 groups[groupIndex][slotIndex] = draggedPlayer;
                 
+                await saveGroups();
                 updateGroupBuilder();
             }
         }
         
-
-        
         // Initialize
-        updateDisplay();
+        updateSyncStatus('✅ Synchronisiert mit Firebase');
     </script>
 </body>
 </html>
