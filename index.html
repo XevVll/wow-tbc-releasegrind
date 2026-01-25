@@ -155,36 +155,6 @@
             background: rgba(255,255,255,0.05);
         }
         
-        .class-checkboxes {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            padding: 10px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 5px;
-        }
-        
-        .class-checkbox-label {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9em;
-        }
-        
-        .class-checkbox-label:hover {
-            background: rgba(255,255,255,0.15);
-            transform: translateY(-1px);
-        }
-        
-        .class-checkbox-label input {
-            width: auto;
-            margin-right: 6px;
-        }
-        
         .edit-btn {
             background: #3498db;
             color: white;
@@ -326,7 +296,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.8 - 2025-01-26
+            Version 1.7 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -450,35 +420,18 @@
             
             <div class="input-grid">
                 <input type="text" id="editPlayerName" placeholder="Spielername">
-                <div class="class-checkboxes">
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Warrior"> Warrior
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Paladin"> Paladin
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Hunter"> Hunter
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Rogue"> Rogue
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Priest"> Priest
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Shaman"> Shaman
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Mage"> Mage
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Warlock"> Warlock
-                    </label>
-                    <label class="class-checkbox-label">
-                        <input type="checkbox" class="editPlayerClassCheckbox" value="Druid"> Druid
-                    </label>
-                </div>
+                <select id="editPlayerClass">
+                    <option value="">Klasse wählen</option>
+                    <option value="Warrior">Warrior</option>
+                    <option value="Paladin">Paladin</option>
+                    <option value="Hunter">Hunter</option>
+                    <option value="Rogue">Rogue</option>
+                    <option value="Priest">Priest</option>
+                    <option value="Shaman">Shaman</option>
+                    <option value="Mage">Mage</option>
+                    <option value="Warlock">Warlock</option>
+                    <option value="Druid">Druid</option>
+                </select>
                 <select id="editPlayerRole" multiple style="height: 80px;">
                     <option value="Tank">Tank</option>
                     <option value="Heal">Heal</option>
@@ -493,7 +446,6 @@
                 <select id="editPlayerSchedule">
                     <option value="">Zeitplan wählen</option>
                     <option value="0 Uhr gehts los">0 Uhr gehts los</option>
-                    <option value="Mittags">Mittags</option>
                     <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
                     <option value="Mir egal">Mir egal</option>
                 </select>
@@ -617,8 +569,7 @@
         
         window.addPlayer = async function() {
             const name = document.getElementById('playerName').value.trim();
-            const classCheckboxes = document.querySelectorAll('.playerClassCheckbox:checked');
-            const selectedClasses = Array.from(classCheckboxes).map(cb => cb.value);
+            const playerClass = document.getElementById('playerClass').value;
             const roleSelect = document.getElementById('playerRole');
             const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
             const type = document.getElementById('playerType').value;
@@ -626,13 +577,12 @@
             const vacation = document.getElementById('playerVacation').checked;
             const quests = document.getElementById('playerQuests').checked;
             
-            if (!name || selectedClasses.length === 0 || selectedRoles.length === 0 || !type || !schedule) {
-                alert('Bitte fülle alle Felder aus! (Mindestens eine Klasse und eine Rolle auswählen)');
+            if (!name || !playerClass || selectedRoles.length === 0 || !type || !schedule) {
+                alert('Bitte fülle alle Felder aus! (Mindestens eine Rolle auswählen)');
                 return;
             }
             
-            // Join classes and roles with comma for display
-            const playerClass = selectedClasses.join(', ');
+            // Join roles with comma for display
             const role = selectedRoles.join(', ');
             
             updateSyncStatus('⏳ Speichere Spieler...', true);
@@ -641,7 +591,6 @@
                 await addDoc(collection(db, "players"), {
                     name,
                     class: playerClass,
-                    classes: selectedClasses, // Store as array
                     role,
                     roles: selectedRoles, // Store as array for filtering
                     type,
@@ -653,7 +602,7 @@
                 
                 // Clear inputs
                 document.getElementById('playerName').value = '';
-                document.querySelectorAll('.playerClassCheckbox').forEach(cb => cb.checked = false);
+                document.getElementById('playerClass').value = '';
                 roleSelect.selectedIndex = -1; // Clear all selections
                 document.getElementById('playerType').value = '';
                 document.getElementById('playerSchedule').value = '';
@@ -701,7 +650,6 @@
                                 id: player.id,
                                 name: player.name,
                                 class: player.class,
-                                classes: player.classes || [],
                                 role: player.role,
                                 roles: player.roles || [],
                                 type: player.type,
@@ -985,16 +933,11 @@
             
             // Fill form with current values
             document.getElementById('editPlayerName').value = player.name;
+            document.getElementById('editPlayerClass').value = player.class;
             document.getElementById('editPlayerType').value = player.type;
             document.getElementById('editPlayerSchedule').value = player.schedule || '';
             document.getElementById('editPlayerVacation').checked = player.vacation || false;
             document.getElementById('editPlayerQuests').checked = player.quests || false;
-            
-            // Set class checkboxes
-            const classes = player.classes || (player.class ? player.class.split(', ') : []);
-            document.querySelectorAll('.editPlayerClassCheckbox').forEach(cb => {
-                cb.checked = classes.includes(cb.value);
-            });
             
             // Set multiple role selections
             const roleSelect = document.getElementById('editPlayerRole');
@@ -1016,8 +959,7 @@
             if (!editingPlayerId) return;
             
             const name = document.getElementById('editPlayerName').value.trim();
-            const classCheckboxes = document.querySelectorAll('.editPlayerClassCheckbox:checked');
-            const selectedClasses = Array.from(classCheckboxes).map(cb => cb.value);
+            const playerClass = document.getElementById('editPlayerClass').value;
             const roleSelect = document.getElementById('editPlayerRole');
             const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
             const type = document.getElementById('editPlayerType').value;
@@ -1025,12 +967,11 @@
             const vacation = document.getElementById('editPlayerVacation').checked;
             const quests = document.getElementById('editPlayerQuests').checked;
             
-            if (!name || selectedClasses.length === 0 || selectedRoles.length === 0 || !type || !schedule) {
-                alert('Bitte fülle alle Felder aus! (Mindestens eine Klasse und eine Rolle auswählen)');
+            if (!name || !playerClass || selectedRoles.length === 0 || !type || !schedule) {
+                alert('Bitte fülle alle Felder aus! (Mindestens eine Rolle auswählen)');
                 return;
             }
             
-            const playerClass = selectedClasses.join(', ');
             const role = selectedRoles.join(', ');
             
             updateSyncStatus('⏳ Aktualisiere Spieler...', true);
@@ -1039,7 +980,6 @@
                 await updateDoc(doc(db, "players", editingPlayerId), {
                     name,
                     class: playerClass,
-                    classes: selectedClasses,
                     role,
                     roles: selectedRoles,
                     type,
@@ -1058,7 +998,6 @@
                                 id: editingPlayerId,
                                 name,
                                 class: playerClass,
-                                classes: selectedClasses,
                                 role,
                                 roles: selectedRoles,
                                 type,
