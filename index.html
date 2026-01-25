@@ -360,12 +360,18 @@
                     <option value="Heal">Heal</option>
                     <option value="DPS">DPS</option>
                 </select>
-                <select id="playerType">
-                    <option value="">Typ wählen</option>
-                    <option value="Melee Cleave">Melee Cleave</option>
-                    <option value="Spell Cleave">Spell Cleave</option>
-                    <option value="Beides">Beides</option>
-                </select>
+               <div class="role-checkboxes">
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="playerRoleCheckbox" value="Tank"> Tank
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="playerRoleCheckbox" value="Heal"> Heal
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="playerRoleCheckbox" value="DPS"> DPS
+                    </label>
+                </div>
+
                 <select id="playerSchedule">
                     <option value="">Zeitplan wählen</option>
                     <option value="0 Uhr gehts los">0 Uhr gehts los</option>
