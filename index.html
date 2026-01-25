@@ -316,7 +316,12 @@
         </div>
         
         <div class="section">
-            <h2>🎯 Gruppen Builder (5er Gruppen)</h2>
+            <h2>🎯 Gruppen Builder</h2>
+            <p style="margin-bottom: 15px; color: rgba(255,255,255,0.7);">Optimale Gruppe: 1 Tank, 1 Healer, 3 DPS</p>
+            <div style="margin-bottom: 15px;">
+                <button onclick="autoFillGroups()" style="background: #27ae60;">🤖 Auto-Fill (Smart)</button>
+                <button onclick="clearAllGroups()" style="background: #e74c3c; margin-left: 10px;">🗑️ Alle Gruppen leeren</button>
+            </div>
             <div class="group-builder" id="groupBuilder">
                 <!-- Groups will be generated here -->
             </div>
@@ -355,11 +360,20 @@
         });
         
         // Real-time listener for groups
-        onSnapshot(doc(db, "config", "groups"), (doc) => {
-            if (doc.exists()) {
-                groups = doc.data().groups || [[], [], [], [], []];
-                updateGroupBuilder();
+        onSnapshot(doc(db, "config", "groups"), (docSnap) => {
+            if (docSnap.exists()) {
+                groups = docSnap.data().groups || [[], [], [], [], []];
+            } else {
+                // Initialize empty groups if document doesn't exist
+                groups = [[], [], [], [], []];
+                saveGroups();
             }
+            updateGroupBuilder();
+        }, (error) => {
+            console.log("Groups document doesn't exist yet, creating...");
+            groups = [[], [], [], [], []];
+            saveGroups();
+            updateGroupBuilder();
         });
         
         function updateSyncStatus(message, loading = false) {
@@ -474,21 +488,44 @@
         
         function updateGroupBuilder() {
             const builder = document.getElementById('groupBuilder');
+            
+            // Calculate how many groups we need (minimum 5, more if we have more players)
+            const neededGroups = Math.max(5, Math.ceil(players.length / 5));
+            
+            // Ensure groups array has enough slots
+            while (groups.length < neededGroups) {
+                groups.push([]);
+            }
+            
             builder.innerHTML = '';
             
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < neededGroups; i++) {
+                // Ensure each group has 5 slots
+                while (!groups[i]) groups[i] = [];
+                while (groups[i].length < 5) groups[i].push(null);
+                
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'group-box';
+                
+                // Count roles in this group
+                const groupPlayers = groups[i].filter(p => p !== null);
+                const tanks = groupPlayers.filter(p => p.role === 'Tank').length;
+                const healers = groupPlayers.filter(p => p.role === 'Heal').length;
+                const dps = groupPlayers.filter(p => p.role === 'DPS').length;
+                
+                const groupStatus = `T: ${tanks}/1 | H: ${healers}/1 | DPS: ${dps}/3`;
+                
                 groupDiv.innerHTML = `
-                    <h3>Gruppe ${i + 1}</h3>
+                    <h3>Gruppe ${i + 1} <span style="font-size: 0.8em; color: rgba(255,255,255,0.6);">(${groupStatus})</span></h3>
                     ${[0, 1, 2, 3, 4].map(slot => {
                         const player = groups[i][slot];
+                        const slotLabel = slot === 0 ? 'Tank' : slot === 1 ? 'Heal' : `DPS ${slot - 1}`;
                         return `
                             <div class="group-slot ${player ? 'filled' : ''}" 
                                  data-group="${i}" 
                                  data-slot="${slot}"
                                  draggable="${player ? 'true' : 'false'}">
-                                ${player ? `<span class="class-${player.class.toLowerCase()}">${player.name}</span> - ${player.role}` : 'Leer (Spieler hierher ziehen)'}
+                                ${player ? `<span class="class-${player.class.toLowerCase()}">${player.name}</span> - ${player.role}` : `<span style="opacity: 0.5;">${slotLabel} (Leer)</span>`}
                             </div>
                         `;
                     }).join('')}
@@ -599,6 +636,54 @@
         
         // Initialize
         updateSyncStatus('✅ Synchronisiert mit Firebase');
+        
+        // Auto-fill groups function
+        window.autoFillGroups = async function() {
+            updateSyncStatus('⏳ Erstelle optimale Gruppen...', true);
+            
+            // Clear all groups first
+            const neededGroups = Math.max(5, Math.ceil(players.length / 5));
+            groups = Array(neededGroups).fill(null).map(() => [null, null, null, null, null]);
+            
+            // Separate players by role
+            const tanks = players.filter(p => p.role === 'Tank');
+            const healers = players.filter(p => p.role === 'Heal');
+            const dpsPlayers = players.filter(p => p.role === 'DPS');
+            
+            // Fill groups optimally
+            for (let i = 0; i < neededGroups; i++) {
+                // Add 1 tank to slot 0
+                if (tanks.length > 0) {
+                    groups[i][0] = tanks.shift();
+                }
+                
+                // Add 1 healer to slot 1
+                if (healers.length > 0) {
+                    groups[i][1] = healers.shift();
+                }
+                
+                // Add 3 DPS to slots 2, 3, 4
+                for (let slot = 2; slot <= 4; slot++) {
+                    if (dpsPlayers.length > 0) {
+                        groups[i][slot] = dpsPlayers.shift();
+                    }
+                }
+            }
+            
+            await saveGroups();
+            updateGroupBuilder();
+        };
+        
+        // Clear all groups function
+        window.clearAllGroups = async function() {
+            if (confirm('Wirklich alle Gruppen leeren?')) {
+                updateSyncStatus('⏳ Leere Gruppen...', true);
+                const neededGroups = Math.max(5, Math.ceil(players.length / 5));
+                groups = Array(neededGroups).fill(null).map(() => [null, null, null, null, null]);
+                await saveGroups();
+                updateGroupBuilder();
+            }
+        };
     </script>
 </body>
 </html>
