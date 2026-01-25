@@ -249,7 +249,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.3 - 2025-01-26
+            Version 1.4 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -282,6 +282,17 @@
                     <option value="Spell Cleave">Spell Cleave</option>
                     <option value="Beides">Beides</option>
                 </select>
+                <select id="playerSchedule">
+                    <option value="">Zeitplan wählen</option>
+                    <option value="0 Uhr bis Exidus">0 Uhr bis Exidus</option>
+                    <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
+                </select>
+                <label style="display: flex; align-items: center; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                    <input type="checkbox" id="playerVacation" style="width: auto; margin-right: 8px;">
+                    <span>Urlaub 06.02</span>
+                </label>
+            </div>
+            <div style="margin-top: 10px;">
                 <button onclick="addPlayer()">Spieler hinzufügen</button>
             </div>
             
@@ -320,13 +331,15 @@
                         <th>Klasse</th>
                         <th>Rolle</th>
                         <th>Typ</th>
+                        <th>Zeitplan</th>
+                        <th>Urlaub 06.02</th>
                         <th>Gruppe</th>
                         <th>Aktion</th>
                     </tr>
                 </thead>
                 <tbody id="playerTableBody">
                     <tr>
-                        <td colspan="6" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td>
+                        <td colspan="8" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td>
                     </tr>
                 </tbody>
             </table>
@@ -450,9 +463,11 @@
             const playerClass = document.getElementById('playerClass').value;
             const role = document.getElementById('playerRole').value;
             const type = document.getElementById('playerType').value;
+            const schedule = document.getElementById('playerSchedule').value;
+            const vacation = document.getElementById('playerVacation').checked;
             
-            if (!name || !playerClass || !role || !type) {
-                alert('Bitte fülle alle Felder aus!');
+            if (!name || !playerClass || !role || !type || !schedule) {
+                alert('Bitte fülle alle Felder aus (außer Urlaub-Checkbox)!');
                 return;
             }
             
@@ -464,6 +479,8 @@
                     class: playerClass,
                     role,
                     type,
+                    schedule,
+                    vacation,
                     createdAt: new Date()
                 });
                 
@@ -472,6 +489,8 @@
                 document.getElementById('playerClass').value = '';
                 document.getElementById('playerRole').value = '';
                 document.getElementById('playerType').value = '';
+                document.getElementById('playerSchedule').value = '';
+                document.getElementById('playerVacation').checked = false;
             } catch (error) {
                 console.error("Error adding player:", error);
                 alert('Fehler beim Hinzufügen: ' + error.message);
@@ -515,7 +534,9 @@
                                 name: player.name,
                                 class: player.class,
                                 role: player.role,
-                                type: player.type
+                                type: player.type,
+                                schedule: player.schedule || '',
+                                vacation: player.vacation || false
                             };
                         } else {
                             groupsData[`group_${groupIndex}`][`slot_${slotIndex}`] = null;
@@ -547,7 +568,7 @@
             console.log("updateTable called, filterUnassigned:", filterUnassigned);
             
             if (players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td></tr>';
                 return;
             }
             
@@ -575,19 +596,22 @@
             }
             
             if (displayPlayers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: rgba(255,255,255,0.5);">Alle Spieler sind zugewiesen</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: rgba(255,255,255,0.5);">Alle Spieler sind zugewiesen</td></tr>';
                 return;
             }
             
             tbody.innerHTML = displayPlayers.map((player) => {
                 const isAssigned = assignedPlayerIds.has(player.id);
                 const groupNumber = playerGroups[player.id] || '-';
+                const vacationIcon = player.vacation ? '🏖️' : '-';
                 return `
                 <tr class="player-row ${isAssigned ? 'assigned' : ''}" draggable="true" data-player-id="${player.id}">
                     <td>${player.name}</td>
                     <td class="class-${player.class.toLowerCase()}">${player.class}</td>
                     <td class="role-${player.role.toLowerCase()}">${player.role}</td>
                     <td>${player.type}</td>
+                    <td>${player.schedule || '-'}</td>
+                    <td style="text-align: center;">${vacationIcon}</td>
                     <td style="text-align: center;">${groupNumber}</td>
                     <td><button class="delete-btn" onclick="deletePlayer('${player.id}')">Löschen</button></td>
                 </tr>
