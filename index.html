@@ -248,6 +248,9 @@
 <body>
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
+        <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
+            Version 1.2 - 2025-01-26
+        </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
         
@@ -376,13 +379,43 @@
         // Real-time listener for groups
         onSnapshot(doc(db, "config", "groups"), (docSnap) => {
             if (docSnap.exists()) {
-                groups = docSnap.data().groups || [[], [], [], [], []];
-                console.log("Groups loaded from Firebase:", groups);
+                const data = docSnap.data();
+                console.log("Raw groups data from Firebase:", data);
+                
+                // Convert objects back to nested arrays
+                if (data.groupsData) {
+                    const groupCount = data.groupCount || 5;
+                    groups = [];
+                    
+                    for (let i = 0; i < groupCount; i++) {
+                        const groupKey = `group_${i}`;
+                        const groupData = data.groupsData[groupKey] || {};
+                        const group = [];
+                        
+                        for (let j = 0; j < 5; j++) {
+                            const slotKey = `slot_${j}`;
+                            group.push(groupData[slotKey] || null);
+                        }
+                        
+                        groups.push(group);
+                    }
+                    
+                    console.log("Groups loaded from Firebase:", groups);
+                } else {
+                    // Old format or no data
+                    groups = data.groups || [[], [], [], [], []];
+                }
             } else {
                 console.log("No groups document found, initializing...");
                 // Only initialize if we haven't loaded groups yet
                 if (!groupsLoaded) {
-                    groups = [[], [], [], [], []];
+                    groups = [
+                        [null, null, null, null, null],
+                        [null, null, null, null, null],
+                        [null, null, null, null, null],
+                        [null, null, null, null, null],
+                        [null, null, null, null, null]
+                    ];
                     saveGroups();
                 }
             }
@@ -391,7 +424,13 @@
         }, (error) => {
             console.log("Error loading groups, creating new document...", error);
             if (!groupsLoaded) {
-                groups = [[], [], [], [], []];
+                groups = [
+                    [null, null, null, null, null],
+                    [null, null, null, null, null],
+                    [null, null, null, null, null],
+                    [null, null, null, null, null],
+                    [null, null, null, null, null]
+                ];
                 saveGroups();
             }
             groupsLoaded = true;
@@ -462,10 +501,32 @@
         
         async function saveGroups() {
             try {
+                // Convert nested arrays to objects for Firebase
+                // Firebase doesn't support nested arrays, so we convert to objects
+                const groupsData = {};
+                groups.forEach((group, groupIndex) => {
+                    groupsData[`group_${groupIndex}`] = {};
+                    group.forEach((player, slotIndex) => {
+                        if (player) {
+                            groupsData[`group_${groupIndex}`][`slot_${slotIndex}`] = {
+                                id: player.id,
+                                name: player.name,
+                                class: player.class,
+                                role: player.role,
+                                type: player.type
+                            };
+                        } else {
+                            groupsData[`group_${groupIndex}`][`slot_${slotIndex}`] = null;
+                        }
+                    });
+                });
+                
                 await setDoc(doc(db, "config", "groups"), {
-                    groups: groups,
+                    groupsData: groupsData,
+                    groupCount: groups.length,
                     updatedAt: new Date()
                 });
+                console.log("Groups saved successfully");
             } catch (error) {
                 console.error("Error saving groups:", error);
             }
