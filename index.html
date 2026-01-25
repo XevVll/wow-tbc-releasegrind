@@ -249,7 +249,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.5 - 2025-01-26
+            Version 1.6 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -270,8 +270,7 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-                <select id="playerRole">
-                    <option value="">Rolle wählen</option>
+                <select id="playerRole" multiple style="height: 80px;">
                     <option value="Tank">Tank</option>
                     <option value="Heal">Heal</option>
                     <option value="DPS">DPS</option>
@@ -299,6 +298,9 @@
             </div>
             <div style="margin-top: 10px;">
                 <button onclick="addPlayer()">Spieler hinzufügen</button>
+                <p style="font-size: 0.9em; color: rgba(255,255,255,0.6); margin-top: 8px;">
+                    💡 Tipp: Halte Strg/Cmd gedrückt um mehrere Rollen auszuwählen
+                </p>
             </div>
             
             <div class="stats" id="stats">
@@ -467,16 +469,20 @@
         window.addPlayer = async function() {
             const name = document.getElementById('playerName').value.trim();
             const playerClass = document.getElementById('playerClass').value;
-            const role = document.getElementById('playerRole').value;
+            const roleSelect = document.getElementById('playerRole');
+            const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
             const type = document.getElementById('playerType').value;
             const schedule = document.getElementById('playerSchedule').value;
             const vacation = document.getElementById('playerVacation').checked;
             const quests = document.getElementById('playerQuests').checked;
             
-            if (!name || !playerClass || !role || !type || !schedule) {
-                alert('Bitte fülle alle Felder aus (außer Checkboxen)!');
+            if (!name || !playerClass || selectedRoles.length === 0 || !type || !schedule) {
+                alert('Bitte fülle alle Felder aus! (Mindestens eine Rolle auswählen)');
                 return;
             }
+            
+            // Join roles with comma for display
+            const role = selectedRoles.join(', ');
             
             updateSyncStatus('⏳ Speichere Spieler...', true);
             
@@ -485,6 +491,7 @@
                     name,
                     class: playerClass,
                     role,
+                    roles: selectedRoles, // Store as array for filtering
                     type,
                     schedule,
                     vacation,
@@ -495,7 +502,7 @@
                 // Clear inputs
                 document.getElementById('playerName').value = '';
                 document.getElementById('playerClass').value = '';
-                document.getElementById('playerRole').value = '';
+                roleSelect.selectedIndex = -1; // Clear all selections
                 document.getElementById('playerType').value = '';
                 document.getElementById('playerSchedule').value = '';
                 document.getElementById('playerVacation').checked = false;
@@ -543,6 +550,7 @@
                                 name: player.name,
                                 class: player.class,
                                 role: player.role,
+                                roles: player.roles || [],
                                 type: player.type,
                                 schedule: player.schedule || '',
                                 vacation: player.vacation || false,
@@ -615,11 +623,15 @@
                 const groupNumber = playerGroups[player.id] || '-';
                 const vacationIcon = player.vacation ? '🏖️' : '-';
                 const questsIcon = player.quests ? '✅' : '❌';
+                
+                // Handle both old single role and new multiple roles
+                const roleDisplay = player.role || '-';
+                
                 return `
                 <tr class="player-row ${isAssigned ? 'assigned' : ''}" draggable="true" data-player-id="${player.id}">
                     <td>${player.name}</td>
                     <td class="class-${player.class.toLowerCase()}">${player.class}</td>
-                    <td class="role-${player.role.toLowerCase()}">${player.role}</td>
+                    <td>${roleDisplay}</td>
                     <td>${player.type}</td>
                     <td>${player.schedule || '-'}</td>
                     <td style="text-align: center;">${vacationIcon}</td>
