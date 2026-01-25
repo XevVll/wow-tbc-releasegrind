@@ -23,7 +23,31 @@
             max-width: 1400px;
             margin: 0 auto;
         }
+        .input-grid .role-checkbox-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
         
+        .input-grid .role-checkbox-label {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .input-grid .role-checkbox-label:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+
         h1 {
             text-align: center;
             color: #ffb800;
