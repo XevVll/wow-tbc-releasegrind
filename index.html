@@ -1189,16 +1189,7 @@
             updateTable();
         };
         
-        // Clear all groups function
-        window.clearAllGroups = async function() {
-            if (confirm('Wirklich alle Gruppen leeren?')) {
-                updateSyncStatus('⏳ Leere Gruppen...', true);
-                const neededGroups = Math.max(5, Math.ceil(players.length / 5));
-                groups = Array(neededGroups).fill(null).map(() => [null, null, null, null, null]);
-                await saveGroups();
-                updateGroupBuilder();
-            }
-        };
+
     </script>
 </body>
 </html>
