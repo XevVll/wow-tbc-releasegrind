@@ -102,6 +102,35 @@
             margin-bottom: 15px;
         }
         
+        .role-checkboxes {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+        }
+        
+        .role-checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .role-checkbox-label:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .role-checkbox-label input {
+            width: auto;
+            margin-right: 6px;
+        }
+        
         input, select {
             padding: 10px;
             border-radius: 5px;
@@ -176,6 +205,30 @@
         
         .delete-btn:hover {
             background: #c0392b;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 0 2px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .role-badge.tank {
+            background: rgba(255,100,100,0.3);
+            color: #ff6464;
+        }
+        
+        .role-badge.heal {
+            background: rgba(100,255,100,0.3);
+            color: #64ff64;
+        }
+        
+        .role-badge.dps {
+            background: rgba(255,255,100,0.3);
+            color: #ffff64;
         }
         
         .class-warrior { color: #C79C6E; }
@@ -296,7 +349,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.7 - 2025-01-26
+            Version 2.0 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -317,11 +370,17 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-                <select id="playerRole" multiple style="height: 80px;">
-                    <option value="Tank">Tank</option>
-                    <option value="Heal">Heal</option>
-                    <option value="DPS">DPS</option>
-                </select>
+                <div class="role-checkboxes">
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="playerRoleCheckbox" value="Tank"> Tank
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="playerRoleCheckbox" value="Heal"> Heal
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="playerRoleCheckbox" value="DPS"> DPS
+                    </label>
+                </div>
                 <select id="playerType">
                     <option value="">Typ wählen</option>
                     <option value="Melee Cleave">Melee Cleave</option>
@@ -331,6 +390,7 @@
                 <select id="playerSchedule">
                     <option value="">Zeitplan wählen</option>
                     <option value="0 Uhr gehts los">0 Uhr gehts los</option>
+                    <option value="Mittags">Mittags</option>
                     <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
                     <option value="Mir egal">Mir egal</option>
                 </select>
@@ -345,9 +405,6 @@
             </div>
             <div style="margin-top: 10px;">
                 <button onclick="addPlayer()">Spieler hinzufügen</button>
-                <p style="font-size: 0.9em; color: rgba(255,255,255,0.6); margin-top: 8px;">
-                    💡 Tipp: Halte Strg/Cmd gedrückt um mehrere Rollen auszuwählen
-                </p>
             </div>
             
             <div class="stats" id="stats">
@@ -403,9 +460,6 @@
         <div class="section">
             <h2>🎯 Gruppen Builder</h2>
             <p style="margin-bottom: 15px; color: rgba(255,255,255,0.7);">Optimale Gruppe: 1 Tank, 1 Healer, 3 DPS | Ziehe Spieler per Drag & Drop in die Gruppen</p>
-            <div style="margin-bottom: 15px;">
-                
-            </div>
             <div class="group-builder" id="groupBuilder">
                 <!-- Groups will be generated here -->
             </div>
@@ -432,11 +486,17 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-                <select id="editPlayerRole" multiple style="height: 80px;">
-                    <option value="Tank">Tank</option>
-                    <option value="Heal">Heal</option>
-                    <option value="DPS">DPS</option>
-                </select>
+                <div class="role-checkboxes">
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="editPlayerRoleCheckbox" value="Tank"> Tank
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="editPlayerRoleCheckbox" value="Heal"> Heal
+                    </label>
+                    <label class="role-checkbox-label">
+                        <input type="checkbox" class="editPlayerRoleCheckbox" value="DPS"> DPS
+                    </label>
+                </div>
                 <select id="editPlayerType">
                     <option value="">Typ wählen</option>
                     <option value="Melee Cleave">Melee Cleave</option>
@@ -446,6 +506,7 @@
                 <select id="editPlayerSchedule">
                     <option value="">Zeitplan wählen</option>
                     <option value="0 Uhr gehts los">0 Uhr gehts los</option>
+                    <option value="Mittags">Mittags</option>
                     <option value="8 Uhr Healthy Sleep">8 Uhr Healthy Sleep</option>
                     <option value="Mir egal">Mir egal</option>
                 </select>
@@ -468,7 +529,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyCH0GJmCAf_e9BZckybnfUA-imO1OXH-5c",
@@ -524,12 +585,10 @@
                     
                     console.log("Groups loaded from Firebase:", groups);
                 } else {
-                    // Old format or no data
                     groups = data.groups || [[], [], [], [], []];
                 }
             } else {
                 console.log("No groups document found, initializing...");
-                // Only initialize if we haven't loaded groups yet
                 if (!groupsLoaded) {
                     groups = [
                         [null, null, null, null, null],
@@ -543,7 +602,7 @@
             }
             groupsLoaded = true;
             updateGroupBuilder();
-            updateTable(); // Update table when groups change
+            updateTable();
         }, (error) => {
             console.log("Error loading groups, creating new document...", error);
             if (!groupsLoaded) {
@@ -558,7 +617,7 @@
             }
             groupsLoaded = true;
             updateGroupBuilder();
-            updateTable(); // Update table when groups change
+            updateTable();
         });
         
         function updateSyncStatus(message, loading = false) {
@@ -570,8 +629,8 @@
         window.addPlayer = async function() {
             const name = document.getElementById('playerName').value.trim();
             const playerClass = document.getElementById('playerClass').value;
-            const roleSelect = document.getElementById('playerRole');
-            const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
+            const roleCheckboxes = document.querySelectorAll('.playerRoleCheckbox:checked');
+            const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
             const type = document.getElementById('playerType').value;
             const schedule = document.getElementById('playerSchedule').value;
             const vacation = document.getElementById('playerVacation').checked;
@@ -582,7 +641,6 @@
                 return;
             }
             
-            // Join roles with comma for display
             const role = selectedRoles.join(', ');
             
             updateSyncStatus('⏳ Speichere Spieler...', true);
@@ -592,7 +650,7 @@
                     name,
                     class: playerClass,
                     role,
-                    roles: selectedRoles, // Store as array for filtering
+                    roles: selectedRoles,
                     type,
                     schedule,
                     vacation,
@@ -600,10 +658,9 @@
                     createdAt: new Date()
                 });
                 
-                // Clear inputs
                 document.getElementById('playerName').value = '';
                 document.getElementById('playerClass').value = '';
-                roleSelect.selectedIndex = -1; // Clear all selections
+                document.querySelectorAll('.playerRoleCheckbox').forEach(cb => cb.checked = false);
                 document.getElementById('playerType').value = '';
                 document.getElementById('playerSchedule').value = '';
                 document.getElementById('playerVacation').checked = false;
@@ -621,7 +678,6 @@
                 updateSyncStatus('⏳ Lösche Spieler...', true);
                 
                 try {
-                    // Remove from groups
                     groups.forEach(group => {
                         const idx = group.findIndex(p => p && p.id === playerId);
                         if (idx !== -1) group[idx] = null;
@@ -639,8 +695,6 @@
         
         async function saveGroups() {
             try {
-                // Convert nested arrays to objects for Firebase
-                // Firebase doesn't support nested arrays, so we convert to objects
                 const groupsData = {};
                 groups.forEach((group, groupIndex) => {
                     groupsData[`group_${groupIndex}`] = {};
@@ -684,14 +738,11 @@
             const filterCheckbox = document.getElementById('filterUnassigned');
             const filterUnassigned = filterCheckbox ? filterCheckbox.checked : false;
             
-            console.log("updateTable called, filterUnassigned:", filterUnassigned);
-            
             if (players.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: rgba(255,255,255,0.5);">Noch keine Spieler hinzugefügt</td></tr>';
                 return;
             }
             
-            // Check which players are assigned to groups
             const assignedPlayerIds = new Set();
             const playerGroups = {};
             
@@ -704,14 +755,9 @@
                 });
             });
             
-            console.log("Assigned player IDs:", Array.from(assignedPlayerIds));
-            console.log("Player groups:", playerGroups);
-            
-            // Filter players if needed
             let displayPlayers = players;
             if (filterUnassigned) {
                 displayPlayers = players.filter(p => !assignedPlayerIds.has(p.id));
-                console.log("Filtered to unassigned players:", displayPlayers.length);
             }
             
             if (displayPlayers.length === 0) {
@@ -723,473 +769,4 @@
                 const isAssigned = assignedPlayerIds.has(player.id);
                 const groupNumber = playerGroups[player.id] || '-';
                 const vacationIcon = player.vacation ? '🏖️' : '-';
-                const questsIcon = player.quests ? '✅' : '❌';
-                
-                // Handle both old single role and new multiple roles
-                const roleDisplay = player.role || '-';
-                
-                return `
-                <tr class="player-row ${isAssigned ? 'assigned' : ''}" draggable="true" data-player-id="${player.id}">
-                    <td>${player.name}</td>
-                    <td class="class-${player.class.toLowerCase()}">${player.class}</td>
-                    <td>${roleDisplay}</td>
-                    <td>${player.type}</td>
-                    <td>${player.schedule || '-'}</td>
-                    <td style="text-align: center;">${vacationIcon}</td>
-                    <td style="text-align: center;">${questsIcon}</td>
-                    <td style="text-align: center;">${groupNumber}</td>
-                    <td>
-                        <button class="edit-btn" onclick="editPlayer('${player.id}')">✏️ Bearbeiten</button>
-                        <button class="delete-btn" onclick="deletePlayer('${player.id}')">🗑️ Löschen</button>
-                    </td>
-                </tr>
-            `}).join('');
-            
-            // Add drag event listeners to player rows
-            document.querySelectorAll('.player-row').forEach(row => {
-                row.addEventListener('dragstart', handleDragStart);
-                row.addEventListener('dragend', handleDragEnd);
-            });
-        }
-        
-        function updateStats() {
-            document.getElementById('totalPlayers').textContent = players.length;
-            document.getElementById('totalTanks').textContent = players.filter(p => p.role === 'Tank').length;
-            document.getElementById('totalHealers').textContent = players.filter(p => p.role === 'Heal').length;
-            document.getElementById('totalDPS').textContent = players.filter(p => p.role === 'DPS').length;
-        }
-        
-        function updateGroupBuilder() {
-            const builder = document.getElementById('groupBuilder');
-            
-            // Don't calculate groups until they're loaded
-            if (!groupsLoaded) {
-                builder.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5);">Lade Gruppen...</p>';
-                return;
-            }
-            
-            // Calculate how many groups we need (minimum 5, more if we have more players)
-            const neededGroups = Math.max(5, groups.length);
-            
-            // Ensure groups array has enough slots
-            while (groups.length < neededGroups) {
-                groups.push([null, null, null, null, null]);
-            }
-            
-            builder.innerHTML = '';
-            
-            for (let i = 0; i < neededGroups; i++) {
-                // Ensure each group has 5 slots
-                if (!groups[i]) groups[i] = [null, null, null, null, null];
-                while (groups[i].length < 5) groups[i].push(null);
-                
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'group-box';
-                
-                // Count roles in this group
-                const groupPlayers = groups[i].filter(p => p !== null);
-                const tanks = groupPlayers.filter(p => p.role === 'Tank').length;
-                const healers = groupPlayers.filter(p => p.role === 'Heal').length;
-                const dps = groupPlayers.filter(p => p.role === 'DPS').length;
-                const shamans = groupPlayers.filter(p => p.class === 'Shaman').length;
-                
-                // Determine group type
-                const spellCleave = groupPlayers.filter(p => p.type === 'Spell Cleave' || p.type === 'Beides').length;
-                const meleeCleave = groupPlayers.filter(p => p.type === 'Melee Cleave' || p.type === 'Beides').length;
-                let groupType = '';
-                if (spellCleave > meleeCleave) groupType = '🔮 Spell';
-                else if (meleeCleave > spellCleave) groupType = '⚔️ Melee';
-                
-                const groupStatus = `T: ${tanks}/1 | H: ${healers}/1 | DPS: ${dps}/3 ${shamans > 0 ? '| 🌊 Shaman' : ''}`;
-                
-                groupDiv.innerHTML = `
-                    <h3>Gruppe ${i + 1} ${groupType} <span style="font-size: 0.7em; color: rgba(255,255,255,0.6);">(${groupStatus})</span></h3>
-                    ${[0, 1, 2, 3, 4].map(slot => {
-                        const player = groups[i][slot];
-                        const slotLabel = slot === 0 ? 'Tank' : slot === 1 ? 'Heal' : `DPS ${slot - 1}`;
-                        return `
-                            <div class="group-slot ${player ? 'filled' : ''}" 
-                                 data-group="${i}" 
-                                 data-slot="${slot}"
-                                 draggable="${player ? 'true' : 'false'}">
-                                ${player ? `<span class="class-${player.class.toLowerCase()}">${player.name}</span> - ${player.role}` : `<span style="opacity: 0.5;">${slotLabel} (Leer)</span>`}
-                            </div>
-                        `;
-                    }).join('')}
-                `;
-                builder.appendChild(groupDiv);
-            }
-            
-            // Add drag event listeners to group slots
-            document.querySelectorAll('.group-slot').forEach(slot => {
-                slot.addEventListener('dragover', handleDragOver);
-                slot.addEventListener('drop', handleDrop);
-                slot.addEventListener('dragleave', handleDragLeave);
-                
-                if (slot.classList.contains('filled')) {
-                    slot.addEventListener('dragstart', handleGroupSlotDragStart);
-                    slot.addEventListener('dragend', handleDragEnd);
-                }
-            });
-        }
-        
-        let draggedPlayer = null;
-        let dragSource = null;
-        let draggedFromGroup = null;
-        let draggedFromSlot = null;
-        
-        function handleDragStart(e) {
-            const row = e.target.closest('.player-row');
-            if (row) {
-                const playerId = row.dataset.playerId;
-                draggedPlayer = players.find(p => p.id === playerId);
-                dragSource = 'table';
-                row.classList.add('dragging');
-            }
-        }
-        
-        function handleGroupSlotDragStart(e) {
-            const slot = e.target.closest('.group-slot');
-            if (slot && slot.classList.contains('filled')) {
-                const groupIndex = parseInt(slot.dataset.group);
-                const slotIndex = parseInt(slot.dataset.slot);
-                draggedPlayer = groups[groupIndex][slotIndex];
-                dragSource = 'group';
-                draggedFromGroup = groupIndex;
-                draggedFromSlot = slotIndex;
-                slot.style.opacity = '0.5';
-            }
-        }
-        
-        function handleDragEnd(e) {
-            const row = e.target.closest('.player-row');
-            if (row) {
-                row.classList.remove('dragging');
-            }
-            const slot = e.target.closest('.group-slot');
-            if (slot) {
-                slot.style.opacity = '1';
-            }
-            draggedPlayer = null;
-            dragSource = null;
-            draggedFromGroup = null;
-            draggedFromSlot = null;
-        }
-        
-        function handleDragOver(e) {
-            e.preventDefault();
-            const slot = e.target.closest('.group-slot');
-            if (slot) {
-                slot.classList.add('drag-over');
-            }
-        }
-        
-        function handleDragLeave(e) {
-            const slot = e.target.closest('.group-slot');
-            if (slot) {
-                slot.classList.remove('drag-over');
-            }
-        }
-        
-        async function handleDrop(e) {
-            e.preventDefault();
-            const slot = e.target.closest('.group-slot');
-            
-            if (slot && draggedPlayer) {
-                slot.classList.remove('drag-over');
-                const groupIndex = parseInt(slot.dataset.group);
-                const slotIndex = parseInt(slot.dataset.slot);
-                
-                updateSyncStatus('⏳ Aktualisiere Gruppen...', true);
-                
-                // Remove from previous position if dragged from group
-                if (dragSource === 'group') {
-                    groups[draggedFromGroup][draggedFromSlot] = null;
-                }
-                
-                // Remove player from any other group
-                groups.forEach(group => {
-                    const idx = group.findIndex(p => p && p.id === draggedPlayer.id);
-                    if (idx !== -1) group[idx] = null;
-                });
-                
-                // Assign to new position
-                groups[groupIndex][slotIndex] = draggedPlayer;
-                
-                await saveGroups();
-                updateGroupBuilder();
-            }
-        }
-        
-        // Initialize
-        updateSyncStatus('✅ Synchronisiert mit Firebase');
-        
-        // Edit Player Functions
-        window.editPlayer = function(playerId) {
-            const player = players.find(p => p.id === playerId);
-            if (!player) return;
-            
-            editingPlayerId = playerId;
-            
-            // Fill form with current values
-            document.getElementById('editPlayerName').value = player.name;
-            document.getElementById('editPlayerClass').value = player.class;
-            document.getElementById('editPlayerType').value = player.type;
-            document.getElementById('editPlayerSchedule').value = player.schedule || '';
-            document.getElementById('editPlayerVacation').checked = player.vacation || false;
-            document.getElementById('editPlayerQuests').checked = player.quests || false;
-            
-            // Set multiple role selections
-            const roleSelect = document.getElementById('editPlayerRole');
-            const roles = player.roles || (player.role ? player.role.split(', ') : []);
-            Array.from(roleSelect.options).forEach(option => {
-                option.selected = roles.includes(option.value);
-            });
-            
-            // Show modal
-            document.getElementById('editModal').style.display = 'block';
-        };
-        
-        window.closeEditModal = function() {
-            document.getElementById('editModal').style.display = 'none';
-            editingPlayerId = null;
-        };
-        
-        window.saveEditPlayer = async function() {
-            if (!editingPlayerId) return;
-            
-            const name = document.getElementById('editPlayerName').value.trim();
-            const playerClass = document.getElementById('editPlayerClass').value;
-            const roleSelect = document.getElementById('editPlayerRole');
-            const selectedRoles = Array.from(roleSelect.selectedOptions).map(opt => opt.value);
-            const type = document.getElementById('editPlayerType').value;
-            const schedule = document.getElementById('editPlayerSchedule').value;
-            const vacation = document.getElementById('editPlayerVacation').checked;
-            const quests = document.getElementById('editPlayerQuests').checked;
-            
-            if (!name || !playerClass || selectedRoles.length === 0 || !type || !schedule) {
-                alert('Bitte fülle alle Felder aus! (Mindestens eine Rolle auswählen)');
-                return;
-            }
-            
-            const role = selectedRoles.join(', ');
-            
-            updateSyncStatus('⏳ Aktualisiere Spieler...', true);
-            
-            try {
-                await updateDoc(doc(db, "players", editingPlayerId), {
-                    name,
-                    class: playerClass,
-                    role,
-                    roles: selectedRoles,
-                    type,
-                    schedule,
-                    vacation,
-                    quests,
-                    updatedAt: new Date()
-                });
-                
-                // Update player in groups if assigned
-                let groupsUpdated = false;
-                groups.forEach((group, groupIndex) => {
-                    group.forEach((player, slotIndex) => {
-                        if (player && player.id === editingPlayerId) {
-                            groups[groupIndex][slotIndex] = {
-                                id: editingPlayerId,
-                                name,
-                                class: playerClass,
-                                role,
-                                roles: selectedRoles,
-                                type,
-                                schedule,
-                                vacation,
-                                quests
-                            };
-                            groupsUpdated = true;
-                        }
-                    });
-                });
-                
-                if (groupsUpdated) {
-                    await saveGroups();
-                }
-                
-                closeEditModal();
-                updateSyncStatus('✅ Spieler aktualisiert');
-            } catch (error) {
-                console.error("Error updating player:", error);
-                alert('Fehler beim Aktualisieren: ' + error.message);
-                updateSyncStatus('❌ Fehler beim Aktualisieren');
-            }
-        };
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target === modal) {
-                closeEditModal();
-            }
-        };
-        
-        // Auto-fill groups function
-        window.autoFillGroups = async function() {
-            updateSyncStatus('⏳ Erstelle optimale Gruppen...', true);
-            
-            // Clear all groups first
-            const neededGroups = Math.max(5, Math.ceil(players.length / 5));
-            groups = Array(neededGroups).fill(null).map(() => [null, null, null, null, null]);
-            
-            // Separate players by role and type
-            const tanks = players.filter(p => p.role === 'Tank');
-            const healers = players.filter(p => p.role === 'Heal');
-            
-            // Separate DPS by type
-            const spellDPS = players.filter(p => p.role === 'DPS' && p.type === 'Spell Cleave');
-            const meleeDPS = players.filter(p => p.role === 'DPS' && p.type === 'Melee Cleave');
-            const hybridDPS = players.filter(p => p.role === 'DPS' && p.type === 'Beides');
-            
-            // Separate shamans by type for optimal placement
-            const meleeShaman = players.filter(p => p.class === 'Shaman' && (p.type === 'Melee Cleave' || p.type === 'Beides'));
-            const spellShaman = players.filter(p => p.class === 'Shaman' && p.type === 'Spell Cleave');
-            const allShamans = [...meleeShaman, ...spellShaman];
-            
-            // Remove shamans from their respective DPS pools to handle separately
-            const removeShamans = (arr) => arr.filter(p => p.class !== 'Shaman');
-            const spellDPSNoShaman = removeShamans(spellDPS);
-            const meleeDPSNoShaman = removeShamans(meleeDPS);
-            const hybridDPSNoShaman = removeShamans(hybridDPS);
-            
-            // Calculate how many melee vs spell groups we need
-            const totalMelee = meleeDPSNoShaman.length + hybridDPSNoShaman.length;
-            const totalSpell = spellDPSNoShaman.length;
-            const meleeGroups = Math.ceil(totalMelee / 3);
-            const spellGroups = Math.ceil(totalSpell / 3);
-            
-            let currentGroup = 0;
-            
-            // Build MELEE groups first
-            for (let i = 0; i < meleeGroups && currentGroup < neededGroups; i++) {
-                const groupIdx = currentGroup++;
-                
-                // Add tank
-                if (tanks.length > 0) {
-                    groups[groupIdx][0] = tanks.shift();
-                }
-                
-                // Add healer
-                if (healers.length > 0) {
-                    groups[groupIdx][1] = healers.shift();
-                }
-                
-                // Try to add a MELEE shaman first
-                if (meleeShaman.length > 0) {
-                    const shaman = meleeShaman.shift();
-                    // Remove from allShamans too
-                    const idx = allShamans.findIndex(s => s.id === shaman.id);
-                    if (idx !== -1) allShamans.splice(idx, 1);
-                    groups[groupIdx][2] = shaman;
-                    
-                    // Add 2 more melee DPS
-                    for (let slot = 3; slot <= 4; slot++) {
-                        if (meleeDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = meleeDPSNoShaman.shift();
-                        } else if (hybridDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = hybridDPSNoShaman.shift();
-                        }
-                    }
-                } else {
-                    // No melee shaman available, add 3 melee DPS
-                    for (let slot = 2; slot <= 4; slot++) {
-                        if (meleeDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = meleeDPSNoShaman.shift();
-                        } else if (hybridDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = hybridDPSNoShaman.shift();
-                        }
-                    }
-                }
-            }
-            
-            // Build SPELL groups
-            for (let i = 0; i < spellGroups && currentGroup < neededGroups; i++) {
-                const groupIdx = currentGroup++;
-                
-                // Add tank
-                if (tanks.length > 0) {
-                    groups[groupIdx][0] = tanks.shift();
-                }
-                
-                // Add healer
-                if (healers.length > 0) {
-                    groups[groupIdx][1] = healers.shift();
-                }
-                
-                // Try to add a SPELL shaman first
-                if (spellShaman.length > 0) {
-                    const shaman = spellShaman.shift();
-                    const idx = allShamans.findIndex(s => s.id === shaman.id);
-                    if (idx !== -1) allShamans.splice(idx, 1);
-                    groups[groupIdx][2] = shaman;
-                    
-                    // Add 2 more spell DPS
-                    for (let slot = 3; slot <= 4; slot++) {
-                        if (spellDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = spellDPSNoShaman.shift();
-                        } else if (hybridDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = hybridDPSNoShaman.shift();
-                        }
-                    }
-                } else {
-                    // No spell shaman, add 3 spell DPS
-                    for (let slot = 2; slot <= 4; slot++) {
-                        if (spellDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = spellDPSNoShaman.shift();
-                        } else if (hybridDPSNoShaman.length > 0) {
-                            groups[groupIdx][slot] = hybridDPSNoShaman.shift();
-                        }
-                    }
-                }
-            }
-            
-            // Fill remaining groups with leftover players and remaining shamans
-            const leftoverDPS = [...meleeDPSNoShaman, ...spellDPSNoShaman, ...hybridDPSNoShaman];
-            
-            for (let i = currentGroup; i < neededGroups; i++) {
-                // Add tank
-                if (tanks.length > 0) {
-                    groups[i][0] = tanks.shift();
-                }
-                
-                // Add healer
-                if (healers.length > 0) {
-                    groups[i][1] = healers.shift();
-                }
-                
-                // Try to add a shaman if available
-                if (allShamans.length > 0) {
-                    groups[i][2] = allShamans.shift();
-                    
-                    // Fill remaining with leftover DPS
-                    for (let slot = 3; slot <= 4; slot++) {
-                        if (leftoverDPS.length > 0) {
-                            groups[i][slot] = leftoverDPS.shift();
-                        }
-                    }
-                } else {
-                    // No shamans left, just fill with DPS
-                    for (let slot = 2; slot <= 4; slot++) {
-                        if (leftoverDPS.length > 0) {
-                            groups[i][slot] = leftoverDPS.shift();
-                        }
-                    }
-                }
-            }
-            
-            await saveGroups();
-            updateGroupBuilder();
-            updateTable();
-        };
-        
-
-    </script>
-</body>
-</html>
+                const questsIcon = player.quests ? '✅' :
