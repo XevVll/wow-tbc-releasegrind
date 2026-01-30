@@ -104,7 +104,7 @@
         
         /* Make role checkboxes span 2 columns to prevent clipping */
         .role-checkboxes-wrapper {
-            grid-column: span 1;
+            grid-column: span 2;
         }
         
         input, select {
@@ -175,8 +175,8 @@
         
         .role-checkboxes {
             display: flex;
-            gap: 5px;
-            padding: 5px;
+            gap: 10px;
+            padding: 10px;
             background: rgba(255,255,255,0.05);
             border-radius: 5px;
             flex-wrap: wrap;
@@ -769,7 +769,7 @@
             updateStats();
         }
         
-        function updateTable() {
+        window.updateTable = function() {
             const tbody = document.getElementById('playerTableBody');
             const filterCheckbox = document.getElementById('filterUnassigned');
             const filterUnassigned = filterCheckbox ? filterCheckbox.checked : false;
