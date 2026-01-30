@@ -97,9 +97,14 @@
         
         .input-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 10px;
             margin-bottom: 15px;
+        }
+        
+        /* Make role checkboxes span 2 columns to prevent clipping */
+        .role-checkboxes-wrapper {
+            grid-column: span 2;
         }
         
         input, select {
@@ -174,17 +179,19 @@
             padding: 10px;
             background: rgba(255,255,255,0.05);
             border-radius: 5px;
+            flex-wrap: wrap;
         }
         
         .class-checkbox-label, .role-checkbox-label {
             display: flex;
             align-items: center;
-            padding: 8px;
+            padding: 8px 12px;
             background: rgba(255,255,255,0.1);
             border-radius: 5px;
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.9em;
+            white-space: nowrap;
         }
         
         .class-checkbox-label:hover, .role-checkbox-label:hover {
@@ -362,7 +369,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 2.0 - 2025-01-26
+            Version 2.1 - 2025-01-30
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -383,16 +390,18 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-                <div class="role-checkboxes">
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="playerRoleCheckbox" value="Tank"> Tank
-                    </label>
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="playerRoleCheckbox" value="Heal"> Heal
-                    </label>
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="playerRoleCheckbox" value="DPS"> DPS
-                    </label>
+                <div class="role-checkboxes-wrapper">
+                    <div class="role-checkboxes">
+                        <label class="role-checkbox-label">
+                            <input type="checkbox" class="playerRoleCheckbox" value="Tank"> Tank
+                        </label>
+                        <label class="role-checkbox-label">
+                            <input type="checkbox" class="playerRoleCheckbox" value="Heal"> Heal
+                        </label>
+                        <label class="role-checkbox-label">
+                            <input type="checkbox" class="playerRoleCheckbox" value="DPS"> DPS
+                        </label>
+                    </div>
                 </div>
                 <select id="playerType">
                     <option value="">Typ wählen</option>
@@ -418,7 +427,7 @@
             <div style="margin-top: 10px;">
                 <button onclick="addPlayer()">Spieler hinzufügen</button>
                 <p style="font-size: 0.9em; color: rgba(255,255,255,0.6); margin-top: 8px;">
-                    💡 Tipp: Halte Strg/Cmd gedrückt um mehrere Rollen auszuwählen
+                    💡 Tipp: Du kannst mehrere Rollen gleichzeitig auswählen
                 </p>
             </div>
             
@@ -429,15 +438,15 @@
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" id="totalTanks">0</div>
-                    <div class="stat-label">Tanks</div>
+                    <div class="stat-label">Tank-Rollen</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" id="totalHealers">0</div>
-                    <div class="stat-label">Healer</div>
+                    <div class="stat-label">Heal-Rollen</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" id="totalDPS">0</div>
-                    <div class="stat-label">DPS</div>
+                    <div class="stat-label">DPS-Rollen</div>
                 </div>
             </div>
         </div>
@@ -504,16 +513,18 @@
                     <option value="Warlock">Warlock</option>
                     <option value="Druid">Druid</option>
                 </select>
-                <div class="role-checkboxes">
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="editPlayerRoleCheckbox" value="Tank"> Tank
-                    </label>
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="editPlayerRoleCheckbox" value="Heal"> Heal
-                    </label>
-                    <label class="role-checkbox-label">
-                        <input type="checkbox" class="editPlayerRoleCheckbox" value="DPS"> DPS
-                    </label>
+                <div class="role-checkboxes-wrapper">
+                    <div class="role-checkboxes">
+                        <label class="role-checkbox-label">
+                            <input type="checkbox" class="editPlayerRoleCheckbox" value="Tank"> Tank
+                        </label>
+                        <label class="role-checkbox-label">
+                            <input type="checkbox" class="editPlayerRoleCheckbox" value="Heal"> Heal
+                        </label>
+                        <label class="role-checkbox-label">
+                            <input type="checkbox" class="editPlayerRoleCheckbox" value="DPS"> DPS
+                        </label>
+                    </div>
                 </div>
                 <select id="editPlayerType">
                     <option value="">Typ wählen</option>
@@ -836,10 +847,24 @@
         }
         
         function updateStats() {
+            // Count each role occurrence individually (a player with Tank+DPS counts as 1 Tank and 1 DPS)
+            let totalTanks = 0;
+            let totalHealers = 0;
+            let totalDPS = 0;
+            
+            players.forEach(player => {
+                const roles = player.roles || (player.role ? player.role.split(', ') : []);
+                roles.forEach(role => {
+                    if (role === 'Tank') totalTanks++;
+                    else if (role === 'Heal') totalHealers++;
+                    else if (role === 'DPS') totalDPS++;
+                });
+            });
+            
             document.getElementById('totalPlayers').textContent = players.length;
-            document.getElementById('totalTanks').textContent = players.filter(p => p.role === 'Tank').length;
-            document.getElementById('totalHealers').textContent = players.filter(p => p.role === 'Heal').length;
-            document.getElementById('totalDPS').textContent = players.filter(p => p.role === 'DPS').length;
+            document.getElementById('totalTanks').textContent = totalTanks;
+            document.getElementById('totalHealers').textContent = totalHealers;
+            document.getElementById('totalDPS').textContent = totalDPS;
         }
         
         function updateGroupBuilder() {
