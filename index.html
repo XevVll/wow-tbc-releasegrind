@@ -164,6 +164,10 @@
             border-radius: 5px;
         }
         
+        .role-tank { background: rgba(255,100,100,0.2); }
+        .role-heal { background: rgba(100,255,100,0.2); }
+        .role-dps { background: rgba(255,255,100,0.2); }
+        
         .role-checkboxes {
             display: flex;
             gap: 10px;
@@ -214,6 +218,30 @@
         
         .delete-btn:hover {
             background: #c0392b;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 0 2px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .role-badge.tank {
+            background: rgba(255,100,100,0.3);
+            color: #ff6464;
+        }
+        
+        .role-badge.heal {
+            background: rgba(100,255,100,0.3);
+            color: #64ff64;
+        }
+        
+        .role-badge.dps {
+            background: rgba(255,255,100,0.3);
+            color: #ffff64;
         }
         
         .class-warrior { color: #C79C6E; }
@@ -334,7 +362,7 @@
     <div class="container">
         <h1>⚔️ WoW TBC Classic Roster & Gruppen-Planer ⚔️</h1>
         <div style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8em; margin-bottom: 10px;">
-            Version 1.9 - 2025-01-26
+            Version 2.0 - 2025-01-26
         </div>
         
         <div class="sync-status" id="syncStatus">🔄 Verbinde mit Firebase...</div>
@@ -770,14 +798,18 @@
                 const vacationIcon = player.vacation ? '🏖️' : '-';
                 const questsIcon = player.quests ? '✅' : '❌';
                 
-                // Handle both old single role and new multiple roles
-                const roleDisplay = player.role || '-';
+                // Handle both old single role and new multiple roles - create badges
+                const roles = player.roles || (player.role ? player.role.split(', ') : []);
+                const roleDisplay = roles.map(r => {
+                    const roleClass = r.toLowerCase();
+                    return `<span class="role-badge ${roleClass}">${r}</span>`;
+                }).join(' ');
                 
                 return `
                 <tr class="player-row ${isAssigned ? 'assigned' : ''}" draggable="true" data-player-id="${player.id}">
                     <td>${player.name}</td>
                     <td class="class-${player.class.toLowerCase()}">${player.class}</td>
-                    <td>${roleDisplay}</td>
+                    <td>${roleDisplay || '-'}</td>
                     <td>${player.type}</td>
                     <td>${player.schedule || '-'}</td>
                     <td style="text-align: center;">${vacationIcon}</td>
